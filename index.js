@@ -1,5 +1,5 @@
 // index.js — Railway entry point
-require('dotenv').config()
+// No dotenv needed — Railway injects env vars directly
 const express = require('express')
 const cors    = require('cors')
 const app     = express()
@@ -10,7 +10,7 @@ app.use(cors({
     process.env.FRONTEND_URL,
     'https://unrivaled-lolly-1224e1.netlify.app',
     'http://localhost:3000',
-    'http://127.0.0.1:5500', // local dev with live server
+    'http://127.0.0.1:5500',
   ],
   credentials: true,
 }))
