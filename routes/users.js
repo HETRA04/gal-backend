@@ -154,6 +154,45 @@ router.post('/availability', requireInstructor, async (req, res) => {
   }
 })
 
+// ── RECLAIM ORPHANED AUTH ACCOUNT ────────────────────────────
+// Called when signUp returns "already registered" but no profile exists.
+// Safe: only deletes auth users that have no matching profiles row.
+router.post('/reclaim-orphan', async (req, res) => {
+  try {
+    const { email } = req.body
+    if (!email) return res.status(400).json({ error: 'email required' })
+
+    const normalised = email.toLowerCase().trim()
+
+    // If a profile exists, this is a real account — refuse
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', normalised)
+      .maybeSingle()
+
+    if (profile) {
+      return res.status(409).json({ error: 'An account already exists with this email. Please sign in instead.' })
+    }
+
+    // Find the orphaned auth user
+    const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+    if (listErr) throw listErr
+
+    const authUser = users?.find(u => u.email?.toLowerCase() === normalised)
+    if (!authUser) return res.status(404).json({ error: 'No auth record found for this email.' })
+
+    // Delete orphaned auth record so the email can be reused
+    const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(authUser.id)
+    if (delErr) throw delErr
+
+    res.json({ success: true })
+  } catch (err) {
+    console.error('Reclaim orphan error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ── DELETE USER (admin only) ───────────────────────────────
 router.delete('/:userId', requireAdmin, async (req, res) => {
   try {
