@@ -1,7 +1,7 @@
 // routes/users.js
 const express = require('express')
 const router  = express.Router()
-const { requireAuth, requireInstructor, supabaseAdmin } = require('../middleware/auth')
+const { requireAuth, requireInstructor, requireAdmin, supabaseAdmin } = require('../middleware/auth')
 
 // ── COMPLETE ONBOARDING ────────────────────────────────────
 // Called after learner fills in their profile details
@@ -150,6 +150,27 @@ router.post('/availability', requireInstructor, async (req, res) => {
     res.json({ success: true, count: slots.length })
   } catch (err) {
     console.error('Availability error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── DELETE USER (admin only) ───────────────────────────────
+router.delete('/:userId', requireAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params
+    if (!userId) return res.status(400).json({ error: 'userId required' })
+
+    // Delete profile rows first so FK constraints don't block auth deletion
+    await supabaseAdmin.from('learner_profiles').delete().eq('user_id', userId)
+    await supabaseAdmin.from('instructor_profiles').delete().eq('user_id', userId)
+    await supabaseAdmin.from('profiles').delete().eq('id', userId)
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
+    if (error) throw error
+
+    res.json({ success: true })
+  } catch (err) {
+    console.error('Delete user error:', err)
     res.status(500).json({ error: err.message })
   }
 })

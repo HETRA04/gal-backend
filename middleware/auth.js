@@ -62,4 +62,20 @@ async function requireLearner(req, res, next) {
   })
 }
 
-module.exports = { requireAuth, requireInstructor, requireLearner, supabaseAdmin }
+// Verify user is an admin
+async function requireAdmin(req, res, next) {
+  await requireAuth(req, res, async () => {
+    const { data: profile } = await req.supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', req.user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' })
+    }
+    next()
+  })
+}
+
+module.exports = { requireAuth, requireInstructor, requireLearner, requireAdmin, supabaseAdmin }
