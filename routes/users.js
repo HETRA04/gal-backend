@@ -176,10 +176,10 @@ router.post('/reclaim-orphan', async (req, res) => {
     }
 
     // Find the orphaned auth user
-    const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+    const { data: listData, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
     if (listErr) throw listErr
 
-    const authUser = users?.find(u => u.email?.toLowerCase() === normalised)
+    const authUser = listData?.users?.find(u => u.email?.toLowerCase() === normalised)
     if (!authUser) return res.status(404).json({ error: 'No auth record found for this email.' })
 
     // Delete orphaned auth record so the email can be reused
