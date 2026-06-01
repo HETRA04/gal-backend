@@ -10,6 +10,8 @@ app.use(cors({
     process.env.FRONTEND_URL,
     'https://getalesson.co.uk',
     'https://www.getalesson.co.uk',
+    'capacitor://localhost',
+    'http://localhost',
     'https://unrivaled-lolly-1224e1.netlify.app',
     'http://localhost:3000',
     'http://127.0.0.1:5500',
@@ -27,9 +29,10 @@ app.use(express.json())
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }))
 
 // ── ROUTES ──────────────────────────────────────────────────
-app.use('/stripe',   require('./routes/stripe'))
-app.use('/bookings', require('./routes/bookings'))
-app.use('/users',    require('./routes/users'))
+app.use('/stripe',        require('./routes/stripe'))
+app.use('/bookings',      require('./routes/bookings'))
+app.use('/users',         require('./routes/users'))
+app.use('/notifications', require('./routes/notifications'))
 
 // ── 404 ─────────────────────────────────────────────────────
 app.use((req, res) => res.status(404).json({ error: 'Not found' }))
